@@ -6,7 +6,7 @@ export default function Login() {
   const {
     register,
     handleSubmit,
-    formState: { error }
+    formState: { errors }
   } = useForm()
   const onSubmit = handleSubmit((data) => {
     console.log(data)
