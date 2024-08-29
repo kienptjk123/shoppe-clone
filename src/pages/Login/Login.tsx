@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom'
 
 export default function Login() {
   const {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     register,
     handleSubmit,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     formState: { errors }
   } = useForm()
   const onSubmit = handleSubmit((data) => {
