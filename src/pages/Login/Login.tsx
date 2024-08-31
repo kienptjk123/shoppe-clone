@@ -1,17 +1,48 @@
-import React from 'react'
+import { yupResolver } from '@hookform/resolvers/yup'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
+import { Schema, schema } from '../../utils/rules'
+import { useMutation } from '@tanstack/react-query'
+import { loginAccount } from '../../apis/auth.api'
+import { isAxiosUnprocessableEntityError } from '../../utils/utils'
+import { ResponseApi } from '../../types/utils.type'
+import Input from '../../components/Input'
+
+type FormData = Omit<Schema, 'confirm_password'>
+const loginSchema = schema.omit(['confirm_password'])
 
 export default function Login() {
   const {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     register,
     handleSubmit,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    setError,
     formState: { errors }
-  } = useForm()
+  } = useForm<FormData>({
+    resolver: yupResolver(loginSchema)
+  })
+  const loginMutation = useMutation({
+    mutationFn: (body: Omit<FormData, 'confirm_password'>) => loginAccount(body)
+  })
+
   const onSubmit = handleSubmit((data) => {
-    console.log(data)
+    loginMutation.mutate(data, {
+      onSuccess: (data) => {
+        console.log(data)
+      },
+      onError: (error) => {
+        if (isAxiosUnprocessableEntityError<ResponseApi<Omit<FormData, 'confirm_password'>>>(error)) {
+          const formError = error.response?.data.data
+          if (formError) {
+            Object.keys(formError).forEach((key) => {
+              setError(key as keyof FormData, {
+                message: formError[key as keyof FormData],
+                type: 'Server'
+              })
+            })
+          }
+        }
+      }
+    })
   })
 
   return (
@@ -19,24 +50,29 @@ export default function Login() {
       <div className='max-w-7xl mx-auto px-4'>
         <div className='grid grid-cols-1 lg:grid-cols-5 py-12 lg:py-32 lg:pr-10'>
           <div className='lg:col-span-2 lg:col-start-4'>
-            <form className='p-10 rounded bg-white shadow-sm' onSubmit={onSubmit}>
+            <form className='p-10 rounded bg-white shadow-sm' onSubmit={onSubmit} noValidate>
               <div className='text-2xl'>Đăng nhập</div>
-              <div className='mt-8'>
-                <input
-                  name='email'
-                  type='email'
-                  className='p-3 w-full outline-none border border-gray-300 focus:border-gray-500 rounded-sm focus:shadow-sm'
-                  placeholder='Email'
-                />
-              </div>
-              <div className='mt-3'>
-                <input
-                  name='password'
-                  type='password'
-                  className='p-3 w-full outline-none border focus:border-gray-500 rounded-sm focus:shadow-sm'
-                  placeholder='Password'
-                />
-              </div>
+              <Input
+                name='email'
+                register={register}
+                type='email'
+                className='mt-8'
+                errorMessage={errors.email?.message}
+                placeholder='Email'
+                // rules={rules.email}
+              />
+
+              <Input
+                name='password'
+                register={register}
+                type='password'
+                className='mt-2'
+                errorMessage={errors.password?.message}
+                placeholder='Password'
+                // rules={rules.password}
+                autoComplete='on'
+              />
+
               <div className='mt-3'>
                 <button
                   type='submit'
